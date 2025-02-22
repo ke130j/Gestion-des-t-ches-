@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Tâches</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        #taskInput, #taskDate {
+            padding: 10px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        #addTaskBtn {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #addTaskBtn:hover {
+            background-color: #218838;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            background-color: #f8f9fa;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .done {
+            background-color: #28a745; /* Vert pour les tâches complètes */
+            color: white;
+        }
+        .in-progress {
+            background-color: #ffc107; /* Jaune pour les tâches en cours */
+            color: black;
+        }
+        .urgent {
+            background-color: black; /* Noir pour les tâches urgentes */
+            color: white;
+        }
+        .completeBtn, .inProgressBtn, .urgentBtn, .deleteBtn {
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .completeBtn {
+            background-color: #28a745;
+            color: white;
+        }
+        .completeBtn:hover {
+            background-color: #218838;
+        }
+        .inProgressBtn {
+            background-color: #ffc107;
+            color: black;
+        }
+        .inProgressBtn:hover {
+            background-color: #e0a800;
+        }
+        .urgentBtn {
+            background-color: black; /* Bouton Urgent en noir */
+            color: white;
+        }
+        .urgentBtn:hover {
+            background-color: #333; /* Couleur au survol */
+        }
+        .deleteBtn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .deleteBtn:hover {
+            background-color: #c82333;
+        }
+        .task-date {
+            font-size: 0.9em;
+            color: inherit; /* La couleur du texte s'adapte à la couleur de fond */
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestion des Tâches</h1>
+    <div>
+        <input type="text" id="taskInput" placeholder="Ajouter une nouvelle tâche">
+        <input type="date" id="taskDate" placeholder="Date">
+        <button id="addTaskBtn">Ajouter</button>
+    </div>
+    <ul id="taskList"></ul>
+
+    <script>
+        // Charger les tâches depuis localStorage
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        // Fonction pour afficher les tâches
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+
+                // Appliquer les classes en fonction de l'état de la tâche
+                if (task.status === 'done') {
+                    li.classList.add('done');
+                } else if (task.status === 'in-progress') {
+                    li.classList.add('in-progress');
+                } else if (task.urgent) {
+                    li.classList.add('urgent');
+                }
+
+                // Texte de la tâche et date
+                const taskText = document.createElement('span');
+                taskText.textContent = task.text;
+                li.appendChild(taskText);
+
+                const taskDate = document.createElement('span');
+                taskDate.textContent = `(${task.date})`;
+                taskDate.classList.add('task-date');
+                li.appendChild(taskDate);
+
+                // Bouton "Complet"
+                const completeBtn = document.createElement('button');
+                completeBtn.textContent = 'Complet';
+                completeBtn.classList.add('completeBtn');
+                completeBtn.onclick = () => markComplete(index);
+
+                // Bouton "En cours"
+                const inProgressBtn = document.createElement('button');
+                inProgressBtn.textContent = 'En cours';
+                inProgressBtn.classList.add('inProgressBtn');
+                inProgressBtn.onclick = () => markInProgress(index);
+
+                // Bouton "Urgent"
+                const urgentBtn = document.createElement('button');
+                urgentBtn.textContent = 'Urgent';
+                urgentBtn.classList.add('urgentBtn');
+                urgentBtn.onclick = () => markUrgent(index);
+
+                // Bouton "Supprimer"
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Supprimer';
+                deleteBtn.classList.add('deleteBtn');
+                deleteBtn.onclick = () => deleteTask(index);
+
+                // Ajouter les boutons à la tâche
+                li.appendChild(completeBtn);
+                li.appendChild(inProgressBtn);
+                li.appendChild(urgentBtn);
+                li.appendChild(deleteBtn);
+
+                // Ajouter la tâche à la liste
+                taskList.appendChild(li);
+            });
+        }
+
+        // Fonction pour ajouter une tâche
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const taskDate = document.getElementById('taskDate');
+            const taskText = taskInput.value.trim();
+            const date = taskDate.value;
+
+            if (taskText !== '' && date !== '') {
+                tasks.push({ text: taskText, date: date, status: 'new', urgent: false });
+                taskInput.value = '';
+                taskDate.value = '';
+                saveTasks();
+                renderTasks();
+            } else {
+                alert('Veuillez saisir une tâche et une date.');
+            }
+        }
+
+        // Fonction pour marquer une tâche comme "Complet"
+        function markComplete(index) {
+            tasks[index].status = 'done';
+            tasks[index].urgent = false; // Désactiver l'état urgent
+            saveTasks();
+            renderTasks();
+        }
+
+        // Fonction pour marquer une tâche comme "En cours"
+        function markInProgress(index) {
+            tasks[index].status = 'in-progress';
+            tasks[index].urgent = false; // Désactiver l'état urgent
+            saveTasks();
+            renderTasks();
+        }
+
+        // Fonction pour marquer une tâche comme "Urgent"
+        function markUrgent(index) {
+            tasks[index].urgent = !tasks[index].urgent;
+            if (tasks[index].urgent) {
+                tasks[index].status = 'new'; // Réinitialiser l'état si la tâche est marquée comme urgente
+            }
+            saveTasks();
+            renderTasks();
+        }
+
+        // Fonction pour supprimer une tâche
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            saveTasks();
+            renderTasks();
+        }
+
+        // Fonction pour sauvegarder les tâches dans localStorage
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Événement pour ajouter une tâche
+        document.getElementById('addTaskBtn').addEventListener('click', addTask);
+
+        // Afficher les tâches au chargement de la page
+        renderTasks();
+    </script>
+</body>
+</html>
